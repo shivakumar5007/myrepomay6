@@ -52,15 +52,20 @@ jobs:
             --family nginx-task \
             --container-definitions '[{"name":"my-container","image":"881738188630.dkr.ecr.ap-south-1.amazonaws.com/ecr-project9047","portMappings":[{"containerPort":80}],"memoryReservation":128}]'
      # Step to create ECS service
-      - name: Create ECS Service
+      - name: Create or Update ECS Service with Retry
         run: |
-          aws ecs create-service \
-            --cluster my-ecs-cluster \
-            --service-name nginx-service \
-            --task-definition nginx-task \
-            --desired-count 1 \
-            --launch-type EC2 \
-            --region ${{ secrets.AWS_REGION }}
+          retries=3
+          while [ $retries -gt 0 ]; do
+            aws ecs create-service \
+              --cluster my-ecs-cluster \
+              --service-name nginx-service \
+              --task-definition nginx-task \
+              --desired-count 1 \
+              --launch-type EC2 \
+              --region ${{ secrets.AWS_REGION }} && break
+            retries=$((retries-1))
+            sleep 10  # Wait before retrying
+          done
      # Step to wait for service to stabilize
       - name: Wait for Service Stabilize
         run: |
