@@ -67,5 +67,5 @@ jobs:
           aws ecs wait services-stable \
             --cluster my-ecs-cluster \
             --services nginx-service \
-            --region ${{ secrets.AWS_REGION }}
-
+            --region ${{ secrets.AWS_REGION }} \
+            --waiter-timeout 900  # Increase timeout to 900 seconds (15 minutes)
