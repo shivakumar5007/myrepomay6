@@ -41,3 +41,31 @@ jobs:
           docker build -t $ECR_REGISTRY/ecr-project9047:github.sha -f Dockerfile.yml .
           docker push $ECR_REGISTRY/ecr-project9047:github.sha
           echo "image=$ECR_REGISTRY/ecr-project9047:github.sha" >> $GITHUB_OUTPUT
+         # Step to create ECS cluster
+      - name: Create ECS Cluster
+        run: |
+          aws ecs create-cluster --cluster-name my-ecs-cluster
+     # Step to register task definition
+      - name: Register Task Definition
+        run: |
+          aws ecs register-task-definition \
+            --family nginx-task \
+            --container-definitions '[{"name":"nginx-container","image":"YOUR_ECR_REPO_URL","portMappings":[{"containerPort":80}]}]'
+     # Step to create ECS service
+      - name: Create ECS Service
+        run: |
+          aws ecs create-service \
+            --cluster my-ecs-cluster \
+            --service-name nginx-service \
+            --task-definition nginx-task \
+            --desired-count 1 \
+            --launch-type EC2 \
+            --region ${{ secrets.AWS_REGION }}
+     # Step to wait for service to stabilize
+      - name: Wait for Service Stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster my-ecs-cluster \
+            --services nginx-service \
+            --region ${{ secrets.AWS_REGION }}
+
